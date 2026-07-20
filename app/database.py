@@ -5,6 +5,7 @@ from fastapi import Depends, FastAPI
 from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.models import Url
+from app.utils import generate_short_code
 
 
 sql_file_name = "database.db"
@@ -29,8 +30,8 @@ async def lifespan(app: FastAPI):
     with Session(engine) as session:
         if not session.exec(select(Url)).first():
             session.add_all([
-                Url(original_url="https://www.google.com/"),
-                Url(original_url="https://www.microsoft.com/")
+                Url(original_url="https://www.google.com/", short_code=generate_short_code()),
+                Url(original_url="https://www.microsoft.com/", short_code=generate_short_code())
             ])
             session.commit()
     yield

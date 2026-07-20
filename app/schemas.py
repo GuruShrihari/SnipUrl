@@ -10,6 +10,9 @@ class UrlCreate(BaseModel):
 
 T= TypeVar("T")
 
+class UrlResponse(BaseModel):
+    short_url: str
+
 class Response(BaseModel,Generic[T]):
     data: T
 
