@@ -7,11 +7,13 @@ class UrlCreate(BaseModel):
     url : HttpUrl
 
 
-
 T= TypeVar("T")
 
 class UrlResponse(BaseModel):
     short_url: str
+
+class OriginalUrlResponse(BaseModel):
+    original_url: str
 
 class Response(BaseModel,Generic[T]):
     data: T
