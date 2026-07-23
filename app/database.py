@@ -35,3 +35,5 @@ async def lifespan(app: FastAPI):
             ])
             session.commit()
     yield
+
+
