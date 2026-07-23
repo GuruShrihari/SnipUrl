@@ -1,11 +1,11 @@
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlmodel import select
 
 from app.database import SessionDep, lifespan
 from app.models import Url
-from app.schemas import OriginalUrlResponse, Response, UrlCreate, UrlResponse
+from app.schemas import Response, UrlCreate, UrlResponse, UrlStatsResponse
 from app.utils import generate_short_code
 
 
@@ -60,9 +60,26 @@ async def get_original_url(short_code: str, session:SessionDep):
 
 
 
+@app.get("/stats/{short_code}", response_model=Response[UrlStatsResponse])
+async def get_stats(short_code: str, session:SessionDep):
+    url = session.exec(
+        select(Url).where(Url.short_code == short_code)
+    ).first()
 
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Short code not found"
+        )
 
+    response = UrlStatsResponse(
+        original_url=url.original_url,
+        short_code=url.short_code,
+        clicks=url.clicks,
+        created_at=url.created_at
+    )
 
+    return {"data":response}
 
 
 
