@@ -8,11 +8,14 @@ from app.models import Url
 from app.utils import generate_short_code
 
 
-sql_file_name = "database.db"
-sqlite_url = f"sqlite:///{sql_file_name}"
+from app.config import settings
 
 connect_args = {"check_same_thread": False}
-engine = create_engine(sqlite_url, connect_args= connect_args)
+
+engine = create_engine(
+    settings.DATABASE_URL,
+    connect_args=connect_args
+)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
