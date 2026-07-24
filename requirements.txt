@@ -3,3 +3,4 @@ sqlmodel
 uvicorn
 pydantic
 pydantic-settings
+psycopg[binary]
