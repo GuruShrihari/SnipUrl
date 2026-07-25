@@ -1,0 +1,286 @@
+
+
+/* --- Reset & Base --- */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  background-color: #000;
+  color: #fff;
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* --- Screen-reader-only utility --- */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Visibility helpers --- */
+
+.hidden {
+  display: none !important;
+}
+
+/* --- App container --- */
+
+#app {
+  width: 100%;
+  max-width: 620px;
+  padding: 2rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+/* --- Hero --- */
+
+.hero {
+  text-align: center;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #888;
+  font-weight: 400;
+}
+
+/* --- Shorten form --- */
+
+.shorten-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.url-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  font-family: inherit;
+  color: #fff;
+  background-color: #111;
+  border: 1px solid #282828;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.url-input::placeholder {
+  color: #555;
+}
+
+.url-input:focus {
+  border-color: #555;
+}
+
+.input-hint {
+  font-size: 0.8rem;
+  color: #555;
+  padding-left: 0.25rem;
+}
+
+/* --- Button base --- */
+
+.shorten-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #000;
+  background-color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.shorten-btn:hover:not(:disabled) {
+  background-color: #e0e0e0;
+}
+
+.shorten-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.shorten-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* --- Spinner --- */
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #999;
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Result section --- */
+
+.result-section {
+  width: 100%;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.result-label {
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #111;
+  border: 1px solid #282828;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+}
+
+.short-url-display {
+  flex: 1;
+  font-size: 0.95rem;
+  color: #fff;
+  word-break: break-all;
+  text-align: left;
+}
+
+.copy-btn {
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #000;
+  background-color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  min-width: 72px;
+}
+
+.copy-btn:hover {
+  background-color: #e0e0e0;
+}
+
+/* --- Error section --- */
+
+.error-section {
+  width: 100%;
+  animation: fadeIn 0.3s ease;
+}
+
+.error-message {
+  font-size: 0.9rem;
+  color: #ff6b6b;
+  background-color: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 10px;
+  padding: 0.875rem 1rem;
+  text-align: center;
+}
+
+/* --- Footer --- */
+
+.footer {
+  margin-top: auto;
+  padding-top: 2rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #444;
+}
+
+/* --- Fade-in animation --- */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+
+@media (min-width: 480px) {
+  #app {
+    padding: 4rem 2rem;
+  }
+
+  .title {
+    font-size: 2.5rem;
+  }
+
+  .subtitle {
+    font-size: 1.1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  #app {
+    padding: 6rem 2rem;
+    gap: 3rem;
+  }
+
+  .title {
+    font-size: 3rem;
+  }
+}

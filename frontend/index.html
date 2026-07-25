@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Fast and simple URL shortening service. Shorten long URLs instantly." />
+  <title>SnipUrl — Fast &amp; Simple URL Shortener</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="app">
+    <header class="hero">
+      <h1 class="title">SnipUrl</h1>
+      <p class="subtitle">Fast and simple URL shortening service</p>
+    </header>
+
+    <section class="shorten-section" aria-label="Shorten a URL">
+      <form id="shorten-form" class="shorten-form" novalidate>
+        <label for="url-input" class="sr-only">Enter a URL to shorten</label>
+        <input
+          id="url-input"
+          type="url"
+          class="url-input"
+          placeholder="https://example.com"
+          autocomplete="url"
+          required
+          aria-describedby="input-hint"
+        />
+        <p id="input-hint" class="input-hint">Paste a full URL including https://</p>
+        <button id="shorten-btn" type="submit" class="shorten-btn">
+          <span id="btn-text">Shorten URL</span>
+          <span id="btn-spinner" class="spinner hidden" aria-hidden="true"></span>
+        </button>
+      </form>
+    </section>
+
+    <section id="result-section" class="result-section hidden" aria-live="polite">
+      <p class="result-label">Your shortened URL</p>
+      <div class="result-row">
+        <output id="short-url-display" class="short-url-display"></output>
+        <button id="copy-btn" type="button" class="copy-btn">Copy</button>
+      </div>
+    </section>
+
+    <section id="error-section" class="error-section hidden" aria-live="assertive">
+      <p id="error-message" class="error-message"></p>
+    </section>
+
+    <footer class="footer">
+      <p>&copy; 2026 SnipUrl</p>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
