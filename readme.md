@@ -112,7 +112,7 @@ Loads environment variables using Pydantic Settings.
 
 ---
 
-# 📌 API Endpoints
+#  API Endpoints
 
 ## Create Short URL
 
@@ -220,7 +220,7 @@ Building this project helped me gain practical experience with:
 Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/GuruShrihari/UrlShortener.git
 cd url-shortener
 ```
 
