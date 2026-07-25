@@ -3,37 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Fast and simple URL shortening service. Shorten long URLs instantly." />
-  <title>SnipUrl — Fast &amp; Simple URL Shortener</title>
+  <meta name="description" content="SnipUrl — Fast and simple URL shortening service. Shorten long URLs instantly." />
+  <title>SnipUrl — Shorten URLs Instantly</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
+  <nav class="navbar" aria-label="Main navigation">
+    <a href="index.html" class="nav-logo">SnipUrl</a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">Shorten</a>
+      <a href="stats.html" class="nav-link">Stats</a>
+    </div>
+  </nav>
+
   <main id="app">
-    <header class="hero">
-      <h1 class="title">SnipUrl</h1>
-      <p class="subtitle">Fast and simple URL shortening service</p>
+
+    <!-- Hero -->
+    <header class="hero fade-in">
+      <p class="hero-badge">Fast &amp; Free</p>
+      <h1 class="title">Shorten any URL<br />in seconds</h1>
+      <p class="subtitle">Transform long, messy links into clean, shareable short URLs. No sign-up required.</p>
     </header>
 
-    <section class="shorten-section" aria-label="Shorten a URL">
+    <!-- Shorten form -->
+    <section class="shorten-section fade-in delay-1" aria-label="Shorten a URL">
       <form id="shorten-form" class="shorten-form" novalidate>
         <label for="url-input" class="sr-only">Enter a URL to shorten</label>
-        <input
-          id="url-input"
-          type="url"
-          class="url-input"
-          placeholder="https://example.com"
-          autocomplete="url"
-          required
-          aria-describedby="input-hint"
-        />
-        <p id="input-hint" class="input-hint">Paste a full URL including https://</p>
-        <button id="shorten-btn" type="submit" class="shorten-btn">
-          <span id="btn-text">Shorten URL</span>
-          <span id="btn-spinner" class="spinner hidden" aria-hidden="true"></span>
-        </button>
+        <div class="input-row">
+          <input
+            id="url-input"
+            type="url"
+            class="url-input"
+            placeholder="https://example.com/your-very-long-url"
+            autocomplete="url"
+            required
+          />
+          <button id="shorten-btn" type="submit" class="primary-btn">
+            <span id="btn-text">Shorten</span>
+            <span id="btn-spinner" class="spinner hidden" aria-hidden="true"></span>
+          </button>
+        </div>
       </form>
     </section>
 
+    <!-- Result -->
     <section id="result-section" class="result-section hidden" aria-live="polite">
       <p class="result-label">Your shortened URL</p>
       <div class="result-row">
@@ -42,13 +56,55 @@
       </div>
     </section>
 
+    <!-- Error -->
     <section id="error-section" class="error-section hidden" aria-live="assertive">
       <p id="error-message" class="error-message"></p>
+    </section>
+
+    <!-- Features -->
+    <section class="features fade-in delay-2" aria-label="Features">
+      <div class="feature-card">
+        <div class="feature-icon">&#9889;</div>
+        <h3 class="feature-title">Lightning Fast</h3>
+        <p class="feature-desc">URLs are shortened instantly. No queues, no delays.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#128279;</div>
+        <h3 class="feature-title">Clean Links</h3>
+        <p class="feature-desc">Short, memorable URLs that are easy to share anywhere.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#128202;</div>
+        <h3 class="feature-title">Click Tracking</h3>
+        <p class="feature-desc">Monitor how many times your short links get clicked.</p>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="how-it-works fade-in delay-3" aria-label="How it works">
+      <h2 class="section-heading">How it works</h2>
+      <div class="steps">
+        <div class="step">
+          <span class="step-number">1</span>
+          <p class="step-text">Paste your long URL into the input above</p>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+          <span class="step-number">2</span>
+          <p class="step-text">Click <strong>Shorten</strong> and get your new link</p>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+          <span class="step-number">3</span>
+          <p class="step-text">Copy &amp; share it — track clicks on the <a href="stats.html" class="inline-link">Stats</a> page</p>
+        </div>
+      </div>
     </section>
 
     <footer class="footer">
       <p>&copy; 2026 SnipUrl</p>
     </footer>
+
   </main>
 
   <script src="script.js"></script>

@@ -1,6 +1,8 @@
-
 const API_BASE_URL = "https://snipurl-p2zj.onrender.com";
 
+/* -------------------------------------------------------
+   Shorten page elements (may be null on stats.html)
+   ------------------------------------------------------- */
 const form = document.getElementById("shorten-form");
 const urlInput = document.getElementById("url-input");
 const shortenBtn = document.getElementById("shorten-btn");
@@ -12,58 +14,59 @@ const copyBtn = document.getElementById("copy-btn");
 const errorSection = document.getElementById("error-section");
 const errorMessage = document.getElementById("error-message");
 
+/* -------------------------------------------------------
+   Stats page elements (may be null on index.html)
+   ------------------------------------------------------- */
+const statsForm = document.getElementById("stats-form");
+const statsInput = document.getElementById("stats-input");
+const statsBtn = document.getElementById("stats-btn");
+const statsBtnText = document.getElementById("stats-btn-text");
+const statsBtnSpinner = document.getElementById("stats-btn-spinner");
+const statsResultSection = document.getElementById("stats-result-section");
+const statsOriginalUrl = document.getElementById("stats-original-url");
+const statsShortCode = document.getElementById("stats-short-code");
+const statsClicks = document.getElementById("stats-clicks");
+const statsCreated = document.getElementById("stats-created");
+const statsErrorSection = document.getElementById("stats-error-section");
+const statsErrorMessage = document.getElementById("stats-error-message");
 
+/* -------------------------------------------------------
+   Helpers
+   ------------------------------------------------------- */
 
-/**
- * Show a section element (remove the "hidden" class).
- */
 function showElement(el) {
-  el.classList.remove("hidden");
+  if (el) el.classList.remove("hidden");
 }
 
-/**
- * Hide a section element (add the "hidden" class).
- */
 function hideElement(el) {
-  el.classList.add("hidden");
+  if (el) el.classList.add("hidden");
 }
 
-/**
- * Set the button into its loading state.
- */
 function setLoading(isLoading) {
+  if (!shortenBtn) return;
   shortenBtn.disabled = isLoading;
   if (isLoading) {
     btnText.textContent = "Shortening…";
     showElement(btnSpinner);
   } else {
-    btnText.textContent = "Shorten URL";
+    btnText.textContent = "Shorten";
     hideElement(btnSpinner);
   }
 }
 
-/**
- * Display an error message to the user.
- */
 function showError(message) {
   hideElement(resultSection);
-  errorMessage.textContent = message;
+  if (errorMessage) errorMessage.textContent = message;
   showElement(errorSection);
 }
 
-/**
- * Display the shortened URL result.
- */
 function showResult(shortUrl) {
   hideElement(errorSection);
-  shortUrlDisplay.textContent = shortUrl;
+  if (shortUrlDisplay) shortUrlDisplay.textContent = shortUrl;
   showElement(resultSection);
-  copyBtn.textContent = "Copy";
+  if (copyBtn) copyBtn.textContent = "Copy";
 }
 
-/**
- * Basic URL validation — checks for a non-empty, http(s) URL.
- */
 function isValidUrl(value) {
   if (!value || !value.trim()) return false;
   try {
@@ -74,12 +77,10 @@ function isValidUrl(value) {
   }
 }
 
+/* -------------------------------------------------------
+   API — Shorten
+   ------------------------------------------------------- */
 
-/**
- * Call the backend /shorten endpoint.
- * Returns the shortened URL string on success.
- * Throws an Error with a user-friendly message on failure.
- */
 async function shortenUrl(originalUrl) {
   const response = await fetch(`${API_BASE_URL}/shorten`, {
     method: "POST",
@@ -88,7 +89,6 @@ async function shortenUrl(originalUrl) {
   });
 
   if (!response.ok) {
-    // Attempt to read a detail message from the backend
     let detail = `Request failed (${response.status})`;
     try {
       const body = await response.json();
@@ -96,7 +96,7 @@ async function shortenUrl(originalUrl) {
         detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
       }
     } catch {
-      // Ignore JSON parse errors — use the generic message
+      // ignore
     }
     throw new Error(detail);
   }
@@ -105,16 +105,39 @@ async function shortenUrl(originalUrl) {
   return data.data.short_url;
 }
 
+/* -------------------------------------------------------
+   API — Stats
+   ------------------------------------------------------- */
 
-/**
- * Handle form submission.
- */
+async function fetchStats(shortCode) {
+  const response = await fetch(`${API_BASE_URL}/stats/${encodeURIComponent(shortCode)}`);
+
+  if (!response.ok) {
+    let detail = `Request failed (${response.status})`;
+    try {
+      const body = await response.json();
+      if (body.detail) {
+        detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(detail);
+  }
+
+  const data = await response.json();
+  return data.data;
+}
+
+/* -------------------------------------------------------
+   Handlers — Shorten
+   ------------------------------------------------------- */
+
 async function handleSubmit(event) {
   event.preventDefault();
 
   const rawValue = urlInput.value.trim();
 
-  // Client-side validation
   if (!rawValue) {
     showError("Please enter a URL.");
     urlInput.focus();
@@ -127,7 +150,6 @@ async function handleSubmit(event) {
     return;
   }
 
-  // Reset previous results / errors
   hideElement(resultSection);
   hideElement(errorSection);
   setLoading(true);
@@ -147,9 +169,6 @@ async function handleSubmit(event) {
   }
 }
 
-/**
- * Copy the shortened URL to the clipboard.
- */
 async function handleCopy() {
   const url = shortUrlDisplay.textContent;
   if (!url) return;
@@ -165,6 +184,80 @@ async function handleCopy() {
   }
 }
 
+/* -------------------------------------------------------
+   Handlers — Stats
+   ------------------------------------------------------- */
 
-form.addEventListener("submit", handleSubmit);
-copyBtn.addEventListener("click", handleCopy);
+function setStatsLoading(isLoading) {
+  if (!statsBtn) return;
+  statsBtn.disabled = isLoading;
+  if (isLoading) {
+    statsBtnText.textContent = "Loading…";
+    showElement(statsBtnSpinner);
+  } else {
+    statsBtnText.textContent = "Look up";
+    hideElement(statsBtnSpinner);
+  }
+}
+
+function showStatsError(message) {
+  hideElement(statsResultSection);
+  if (statsErrorMessage) statsErrorMessage.textContent = message;
+  showElement(statsErrorSection);
+}
+
+function showStatsResult(stats) {
+  hideElement(statsErrorSection);
+
+  statsOriginalUrl.textContent = stats.original_url;
+  statsOriginalUrl.href = stats.original_url;
+  statsShortCode.textContent = stats.short_code;
+  statsClicks.textContent = stats.clicks;
+
+  const date = new Date(stats.created_at);
+  statsCreated.textContent = date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+
+  showElement(statsResultSection);
+}
+
+async function handleStatsSubmit(event) {
+  event.preventDefault();
+
+  const rawValue = statsInput.value.trim();
+
+  if (!rawValue) {
+    showStatsError("Please enter a short code.");
+    statsInput.focus();
+    return;
+  }
+
+  hideElement(statsResultSection);
+  hideElement(statsErrorSection);
+  setStatsLoading(true);
+
+  try {
+    const stats = await fetchStats(rawValue);
+    showStatsResult(stats);
+    statsInput.value = "";
+  } catch (err) {
+    if (err instanceof TypeError && err.message === "Failed to fetch") {
+      showStatsError("Unable to reach the server. Please check your connection and try again.");
+    } else {
+      showStatsError(err.message || "Something went wrong. Please try again.");
+    }
+  } finally {
+    setStatsLoading(false);
+  }
+}
+
+/* -------------------------------------------------------
+   Init — bind only what exists on the current page
+   ------------------------------------------------------- */
+
+if (form) form.addEventListener("submit", handleSubmit);
+if (copyBtn) copyBtn.addEventListener("click", handleCopy);
+if (statsForm) statsForm.addEventListener("submit", handleStatsSubmit);

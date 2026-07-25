@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SnipUrl — Check click statistics for your shortened URLs." />
+  <title>SnipUrl — URL Statistics</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <nav class="navbar" aria-label="Main navigation">
+    <a href="index.html" class="nav-logo">SnipUrl</a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Shorten</a>
+      <a href="stats.html" class="nav-link active">Stats</a>
+    </div>
+  </nav>
+
+  <main id="app">
+
+    <!-- Hero -->
+    <header class="hero fade-in">
+      <p class="hero-badge">Analytics</p>
+      <h1 class="title">URL Statistics</h1>
+      <p class="subtitle">Enter a short code to see how your link is performing.</p>
+    </header>
+
+    <!-- Stats form -->
+    <section class="shorten-section fade-in delay-1" aria-label="Look up stats">
+      <form id="stats-form" class="shorten-form" novalidate>
+        <label for="stats-input" class="sr-only">Enter a short code</label>
+        <div class="input-row">
+          <input
+            id="stats-input"
+            type="text"
+            class="url-input"
+            placeholder="e.g. aB3kX9"
+            required
+          />
+          <button id="stats-btn" type="submit" class="primary-btn">
+            <span id="stats-btn-text">Look up</span>
+            <span id="stats-btn-spinner" class="spinner hidden" aria-hidden="true"></span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Stats result -->
+    <section id="stats-result-section" class="stats-result-section hidden" aria-live="polite">
+      <div class="stats-card">
+        <div class="stats-header">
+          <p class="stats-header-label">Link overview</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-block">
+            <span class="stat-number" id="stats-clicks">0</span>
+            <span class="stat-label">Total Clicks</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-date" id="stats-created">—</span>
+            <span class="stat-label">Created</span>
+          </div>
+        </div>
+        <div class="stats-details">
+          <div class="stats-detail-row">
+            <span class="stats-key">Original URL</span>
+            <a id="stats-original-url" class="stats-value stats-link" href="#" target="_blank" rel="noopener noreferrer"></a>
+          </div>
+          <div class="stats-detail-row">
+            <span class="stats-key">Short Code</span>
+            <span id="stats-short-code" class="stats-value"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats error -->
+    <section id="stats-error-section" class="error-section hidden" aria-live="assertive">
+      <p id="stats-error-message" class="error-message"></p>
+    </section>
+
+    <!-- Tips -->
+    <section class="tips-section fade-in delay-2" aria-label="Tips">
+      <h2 class="section-heading">Quick tips</h2>
+      <div class="tips-grid">
+        <div class="tip-card">
+          <p class="tip-title">Where is my short code?</p>
+          <p class="tip-desc">It's the characters at the end of your shortened URL. For example, in <strong>snipurl.com/aB3kX9</strong>, the short code is <strong>aB3kX9</strong>.</p>
+        </div>
+        <div class="tip-card">
+          <p class="tip-title">Clicks not updating?</p>
+          <p class="tip-desc">Click counts are tracked each time someone visits the short link. It may take a moment to reflect.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>&copy; 2026 SnipUrl</p>
+    </footer>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
