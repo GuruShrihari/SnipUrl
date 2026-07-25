@@ -13,7 +13,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://your-frontend-domain.vercel.app", 
+        "https://snipurl-ten.vercel.app/", 
     ],
     allow_methods=["*"],
     allow_headers=["*"],
