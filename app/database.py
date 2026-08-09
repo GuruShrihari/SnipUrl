@@ -10,6 +10,14 @@ from app.utils import generate_short_code
 
 from app.config import settings
 
+import redis
+
+redis_client = redis.from_url(
+    settings.REDIS_URL,
+    decode_responses=True
+)
+
+
 if settings.DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
         settings.DATABASE_URL,
