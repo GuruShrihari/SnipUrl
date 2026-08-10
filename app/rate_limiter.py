@@ -17,9 +17,10 @@ def check_rate_limit(request: Request):
         redis_client.expire(key, Settings.RATE_LIMIT_WINDOW)
 
     if request_count > Settings.RATE_LIMIT:
+        ttl = redis_client.ttl(key)
+        retry_after = ttl if ttl and ttl > 0 else Settings.RATE_LIMIT_WINDOW
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many requests. Try again later."
+            detail="Too many requests. Try again later.",
+            headers={"Retry-After": str(retry_after)}
         )
-
-    

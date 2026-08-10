@@ -1,6 +1,66 @@
 const API_BASE_URL = "https://snipurl-p2zj.onrender.com";
 
 /* -------------------------------------------------------
+   Toast notification system
+   ------------------------------------------------------- */
+
+const toastContainer = document.getElementById("toast-container");
+
+const TOAST_ICONS = {
+  success: "✓",
+  error: "✕",
+  warning: "⚠",
+  info: "ℹ",
+};
+
+const TOAST_DEFAULTS = {
+  duration: 4000,
+};
+
+/**
+ * Show a toast notification.
+ * @param {"success"|"error"|"warning"|"info"} type
+ * @param {string} title
+ * @param {string} [message]
+ * @param {{ duration?: number }} [options]
+ */
+function showToast(type, title, message = "", options = {}) {
+  const duration = options.duration ?? TOAST_DEFAULTS.duration;
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast--${type}`;
+  toast.setAttribute("role", "alert");
+
+  toast.innerHTML = `
+    <span class="toast-icon">${TOAST_ICONS[type]}</span>
+    <div class="toast-body">
+      <p class="toast-title">${title}</p>
+      ${message ? `<p class="toast-message">${message}</p>` : ""}
+    </div>
+    <button class="toast-close" aria-label="Dismiss">&times;</button>
+    <div class="toast-progress" style="animation-duration: ${duration}ms"></div>
+  `;
+
+  // Close button
+  const closeBtn = toast.querySelector(".toast-close");
+  closeBtn.addEventListener("click", () => dismissToast(toast));
+
+  toastContainer.appendChild(toast);
+
+  // Auto-dismiss
+  const timer = setTimeout(() => dismissToast(toast), duration);
+  toast._timer = timer;
+}
+
+function dismissToast(toast) {
+  if (toast._dismissed) return;
+  toast._dismissed = true;
+  clearTimeout(toast._timer);
+  toast.classList.add("toast-exit");
+  toast.addEventListener("animationend", () => toast.remove(), { once: true });
+}
+
+/* -------------------------------------------------------
    Shorten page elements (may be null on stats.html)
    ------------------------------------------------------- */
 const form = document.getElementById("shorten-form");
@@ -78,8 +138,63 @@ function isValidUrl(value) {
 }
 
 /* -------------------------------------------------------
-   API — Shorten
+   Rate-limit cooldown
    ------------------------------------------------------- */
+
+let cooldownTimer = null;
+
+/**
+ * Put the shorten button into a cooldown state with a
+ * live countdown. The button shows "Wait Xs…" and has a
+ * shrinking progress bar at the bottom.
+ */
+function startCooldown(seconds) {
+  if (!shortenBtn || !btnText) return;
+
+  // Clear any existing cooldown
+  if (cooldownTimer) clearInterval(cooldownTimer);
+
+  let remaining = seconds;
+
+  shortenBtn.disabled = true;
+  shortenBtn.classList.add("cooldown");
+  shortenBtn.style.setProperty("--cooldown-duration", `${seconds}s`);
+
+  // Dynamic ::after animation duration
+  shortenBtn.style.animationDuration = `${seconds}s`;
+  // Force re-trigger by removing and re-adding the class
+  shortenBtn.classList.remove("cooldown");
+  void shortenBtn.offsetWidth; // reflow
+  shortenBtn.classList.add("cooldown");
+
+  hideElement(btnSpinner);
+  btnText.textContent = `Wait ${remaining}s…`;
+
+  cooldownTimer = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(cooldownTimer);
+      cooldownTimer = null;
+      shortenBtn.disabled = false;
+      shortenBtn.classList.remove("cooldown");
+      btnText.textContent = "Shorten";
+    } else {
+      btnText.textContent = `Wait ${remaining}s…`;
+    }
+  }, 1000);
+}
+
+/* -------------------------------------------------------
+   API — Shorten (with rate-limit awareness)
+   ------------------------------------------------------- */
+
+class RateLimitError extends Error {
+  constructor(message, retryAfter) {
+    super(message);
+    this.name = "RateLimitError";
+    this.retryAfter = retryAfter;
+  }
+}
 
 async function shortenUrl(originalUrl) {
   const response = await fetch(`${API_BASE_URL}/shorten`, {
@@ -87,6 +202,21 @@ async function shortenUrl(originalUrl) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url: originalUrl }),
   });
+
+  if (response.status === 429) {
+    // Rate limited — extract retry-after or default to 60s
+    const retryAfter = parseInt(response.headers.get("Retry-After"), 10) || 60;
+    let detail = "Too many requests. Please slow down.";
+    try {
+      const body = await response.json();
+      if (body.detail) {
+        detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
+      }
+    } catch {
+      // ignore parse errors
+    }
+    throw new RateLimitError(detail, retryAfter);
+  }
 
   if (!response.ok) {
     let detail = `Request failed (${response.status})`;
@@ -112,6 +242,20 @@ async function shortenUrl(originalUrl) {
 async function fetchStats(shortCode) {
   const response = await fetch(`${API_BASE_URL}/stats/${encodeURIComponent(shortCode)}`);
 
+  if (response.status === 429) {
+    const retryAfter = parseInt(response.headers.get("Retry-After"), 10) || 60;
+    let detail = "Too many requests. Please slow down.";
+    try {
+      const body = await response.json();
+      if (body.detail) {
+        detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
+      }
+    } catch {
+      // ignore
+    }
+    throw new RateLimitError(detail, retryAfter);
+  }
+
   if (!response.ok) {
     let detail = `Request failed (${response.status})`;
     try {
@@ -136,16 +280,19 @@ async function fetchStats(shortCode) {
 async function handleSubmit(event) {
   event.preventDefault();
 
+  // Block if in cooldown
+  if (shortenBtn && shortenBtn.classList.contains("cooldown")) return;
+
   const rawValue = urlInput.value.trim();
 
   if (!rawValue) {
-    showError("Please enter a URL.");
+    showToast("warning", "Missing URL", "Please enter a URL to shorten.");
     urlInput.focus();
     return;
   }
 
   if (!isValidUrl(rawValue)) {
-    showError("Please enter a valid URL starting with http:// or https://.");
+    showToast("warning", "Invalid URL", "Please enter a valid URL starting with http:// or https://.");
     urlInput.focus();
     return;
   }
@@ -157,15 +304,29 @@ async function handleSubmit(event) {
   try {
     const shortUrl = await shortenUrl(rawValue);
     showResult(shortUrl);
+    showToast("success", "URL shortened!", "Your short link is ready to copy and share.");
     urlInput.value = "";
   } catch (err) {
-    if (err instanceof TypeError && err.message === "Failed to fetch") {
+    if (err instanceof RateLimitError) {
+      showToast(
+        "error",
+        "Rate limit reached",
+        `You've hit the request limit. Please wait before trying again.`,
+        { duration: 6000 }
+      );
+      startCooldown(err.retryAfter);
+    } else if (err instanceof TypeError && err.message === "Failed to fetch") {
+      showToast("error", "Connection failed", "Unable to reach the server. Please check your connection.");
       showError("Unable to reach the server. Please check your connection and try again.");
     } else {
+      showToast("error", "Error", err.message || "Something went wrong.");
       showError(err.message || "Something went wrong. Please try again.");
     }
   } finally {
-    setLoading(false);
+    // Only reset loading state if not in cooldown
+    if (!shortenBtn || !shortenBtn.classList.contains("cooldown")) {
+      setLoading(false);
+    }
   }
 }
 
@@ -176,11 +337,12 @@ async function handleCopy() {
   try {
     await navigator.clipboard.writeText(url);
     copyBtn.textContent = "Copied!";
+    showToast("success", "Copied!", "Short URL copied to clipboard.");
     setTimeout(() => {
       copyBtn.textContent = "Copy";
     }, 2000);
   } catch {
-    showError("Failed to copy. Please select the URL and copy manually.");
+    showToast("error", "Copy failed", "Please select the URL and copy it manually.");
   }
 }
 
@@ -230,7 +392,7 @@ async function handleStatsSubmit(event) {
   const rawValue = statsInput.value.trim();
 
   if (!rawValue) {
-    showStatsError("Please enter a short code.");
+    showToast("warning", "Missing short code", "Please enter a short code to look up.");
     statsInput.focus();
     return;
   }
@@ -242,11 +404,22 @@ async function handleStatsSubmit(event) {
   try {
     const stats = await fetchStats(rawValue);
     showStatsResult(stats);
+    showToast("success", "Stats loaded", `Found stats for code "${rawValue}".`);
     statsInput.value = "";
   } catch (err) {
-    if (err instanceof TypeError && err.message === "Failed to fetch") {
+    if (err instanceof RateLimitError) {
+      showToast(
+        "error",
+        "Rate limit reached",
+        "You've hit the request limit. Please wait before trying again.",
+        { duration: 6000 }
+      );
+      showStatsError("Too many requests. Please wait a moment before trying again.");
+    } else if (err instanceof TypeError && err.message === "Failed to fetch") {
+      showToast("error", "Connection failed", "Unable to reach the server.");
       showStatsError("Unable to reach the server. Please check your connection and try again.");
     } else {
+      showToast("error", "Not found", err.message || "Something went wrong.");
       showStatsError(err.message || "Something went wrong. Please try again.");
     }
   } finally {
