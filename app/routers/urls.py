@@ -5,12 +5,15 @@ from app.crud import create_short_url, get_url_by_short_code, increments_click
 from app.database import SessionDep
 from app.schemas import Response, UrlCreate, UrlResponse, UrlStatsResponse
 
+from app.rate_limiter import check_rate_limit
+
 router = APIRouter()
 
 
 @router.post("/shorten",status_code=201,response_model=Response[UrlResponse])
 async def shorten_url(request: Request,url:UrlCreate,session:SessionDep):
 
+    check_rate_limit(request)
     new_url = create_short_url(session, str(url.url))
 
     shortend_url = UrlResponse(
