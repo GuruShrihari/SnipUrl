@@ -1,140 +1,149 @@
-#  URL Shortener API
+# URL Shortener
 
-A production-ready URL Shortener built using **FastAPI** and **SQLModel**, following a clean, modular architecture. The project focuses on backend engineering practices such as API design, database abstraction, CRUD separation, configuration management, and deployment readiness rather than simply shortening URLs.
+A production-ready URL Shortener built using FastAPI and SQLModel with a focus on clean architecture, modular design, and deployment-ready backend development. The application allows users to generate short URLs, redirect to the original destination, and retrieve analytics such as click counts and creation timestamps.
+
+The project follows backend engineering best practices including separation of concerns, environment-based configuration, reusable CRUD operations, and a layered project structure.
 
 ---
 
-##  Features
+## Live Demo
+
+**Frontend:**  
+`https://snipurl-ten.vercel.app/`
+
+<img width="1913" height="915" alt="image" src="https://github.com/user-attachments/assets/dbd8897a-663f-4062-95ec-60e00781ac07" />
+
+<img width="1917" height="910" alt="image" src="https://github.com/user-attachments/assets/1d370758-5b2e-4546-9d9e-d5f2def25551" />
+
+
+
+**Backend API:**  
+`https://snipurl-p2zj.onrender.com`
+
+**API Documentation:**  
+`https://snipurl-p2zj.onrender.com/docs`
+
+<img width="1488" height="904" alt="image" src="https://github.com/user-attachments/assets/fb09c469-c18d-4fcf-a0f6-c58981d622bf" />
+
+---
+
+## Features
 
 - Generate unique 6-character short URLs
 - Redirect users to the original URL
-- Track click counts
+- Track click counts automatically
 - Retrieve URL statistics
 - Collision-resistant short code generation
-- RESTful API with automatic Swagger/OpenAPI documentation
-- Generic API response wrapper for consistent responses
-- Environment-based configuration using `.env`
-- PostgreSQL-ready architecture (supports SQLite during development)
+- PostgreSQL database integration
+- Environment-based configuration
+- Modular project architecture
+- Interactive API documentation using Swagger UI
+- Responsive frontend built with HTML, CSS, and JavaScript
 
 ---
 
-##  Tech Stack
+## Tech Stack
 
-| Category | Technology |
-|----------|------------|
-| Backend | FastAPI |
-| ORM | SQLModel |
-| Database | SQLite (Development), PostgreSQL (Production) |
-| Validation | Pydantic |
-| Configuration | Pydantic Settings |
-| API Docs | Swagger UI / OpenAPI |
-| Server | Uvicorn |
+### Backend
+
+- FastAPI
+- SQLModel
+- PostgreSQL (Neon)
+- Uvicorn
+- Pydantic
+- Pydantic Settings
+
+### Frontend
+
+- HTML5
+- CSS3
+- Vanilla JavaScript
+
+### Deployment
+
+- Render (Backend)
+- Vercel (Frontend)
+- Neon (PostgreSQL)
 
 ---
 
-#  Project Structure
+## Project Structure
 
 ```
-app/
+UrlShortner/
 │
-├── routers/
-│   ├── __init__.py
-│   └── urls.py
+├── app/
+│   ├── routers/
+│   │   ├── __init__.py
+│   │   └── urls.py
+│   │
+│   ├── config.py
+│   ├── crud.py
+│   ├── database.py
+│   ├── models.py
+│   ├── schemas.py
+│   ├── utils.py
+│   └── main.py
 │
-├── crud.py
-├── database.py
-├── config.py
-├── models.py
-├── schemas.py
-├── utils.py
-└── main.py
-
-.env.example
-requirements.txt
-README.md
+├── frontend/
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
+│
+├── requirements.txt
+├── .env.example
+├── README.md
+└── .gitignore
 ```
 
 ---
 
-#  Architecture
-
-The project follows a layered architecture to separate responsibilities.
+## Architecture
 
 ```
-Client
-   │
-   ▼
-FastAPI Router
-   │
-   ▼
-CRUD Layer
-   │
-   ▼
-SQLModel ORM
-   │
-   ▼
-PostgreSQL / SQLite
+                 Browser
+                     │
+                     ▼
+        Frontend (HTML, CSS, JavaScript)
+                     │
+                     ▼
+              FastAPI REST API
+                     │
+                     ▼
+                 CRUD Layer
+                     │
+                     ▼
+              SQLModel ORM
+                     │
+                     ▼
+        PostgreSQL Database (Neon)
 ```
-
-### Router
-
-Responsible only for:
-
-- Receiving requests
-- Returning responses
-- Raising HTTP exceptions
-
-### CRUD Layer
-
-Responsible for all database operations:
-
-- Creating short URLs
-- Fetching URLs
-- Updating click counts
-
-### Models
-
-Contains SQLModel database models.
-
-### Schemas
-
-Contains request and response models used by the API.
-
-### Utils
-
-Contains reusable helper functions including:
-
-- Secure short code generation
-
-### Config
-
-Loads environment variables using Pydantic Settings.
 
 ---
 
-#  API Endpoints
+## API Endpoints
 
-## Create Short URL
+### Create Short URL
 
 ```
 POST /shorten
 ```
 
-Creates a new shortened URL.
+Creates a shortened URL from a valid input URL.
 
 ---
 
-## Redirect
+### Redirect
 
 ```
 GET /{short_code}
 ```
 
-Redirects to the original URL and increments the click counter.
+Redirects the user to the original URL and increments the click counter.
 
 ---
 
-## URL Statistics
+### URL Statistics
 
 ```
 GET /stats/{short_code}
@@ -149,100 +158,113 @@ Returns:
 
 ---
 
-#  Design Decisions
+## Design Decisions
 
-### Clean Project Structure
+### Modular Project Structure
 
-The application was intentionally refactored from a single-file implementation into separate modules to improve maintainability.
+The project is organized into dedicated modules to improve readability, maintainability, and scalability.
 
-- Routers
-- CRUD
-- Models
-- Schemas
-- Utilities
-- Configuration
+- `routers/` handles API routes.
+- `crud.py` contains all database operations.
+- `models.py` defines database models.
+- `schemas.py` defines request and response models.
+- `utils.py` contains reusable helper functions.
+- `config.py` manages environment configuration.
 
 ---
 
-### Generic Response Model
+### Layered Architecture
 
-A reusable generic response wrapper was implemented to ensure all API responses follow a consistent structure.
+Business logic is separated from routing logic. Route handlers are responsible only for request validation, response formatting, and error handling, while database operations are encapsulated within the CRUD layer.
+
+---
+
+### Generic API Responses
+
+A reusable generic response model provides a consistent response format across all endpoints.
 
 Example:
 
 ```json
 {
-    "data": {
-        ...
-    }
+  "data": {
+    ...
+  }
 }
 ```
 
 ---
 
-### Collision Handling
+### Collision-Resistant Short Codes
 
-Generated short codes are checked against the database before insertion to ensure uniqueness.
+Short codes are generated using cryptographically secure random values and validated against the database before insertion to ensure uniqueness.
 
 ---
 
 ### Click Analytics
 
-Every successful redirect automatically increments the click counter stored in the database.
+Every successful redirect increments a persistent click counter stored in the database.
 
 ---
 
-### Environment Configuration
+### Environment-Based Configuration
 
-Application configuration is loaded from environment variables instead of hardcoded values, making the project deployment-ready.
-
----
-
-#  What I Learned
-
-Building this project helped me gain practical experience with:
-
-- Designing RESTful APIs using FastAPI
-- Organizing backend projects using a layered architecture
-- Using SQLModel for ORM-based database interactions
-- Separating database logic into a dedicated CRUD layer
-- Structuring request and response models with Pydantic
-- Managing configuration through environment variables
-- Generating collision-resistant short codes
-- Implementing HTTP redirects
-- Tracking analytics using database updates
-- Preparing an application for production deployment
+Application configuration is managed using environment variables, allowing seamless migration between development and production environments without code changes.
 
 ---
 
-#  Running Locally
+## Running Locally
 
-Clone the repository
+### Clone the repository
 
 ```bash
-git clone https://github.com/GuruShrihari/UrlShortener.git
-cd url-shortener
+git clone https://github.com/<username>/<repository>.git
+cd UrlShortner
 ```
 
-Install dependencies
+### Create a virtual environment
+
+```bash
+python -m venv .venv
+```
+
+### Activate the virtual environment
+
+**Windows**
+
+```bash
+.venv\Scripts\activate
+```
+
+**Linux/macOS**
+
+```bash
+source .venv/bin/activate
+```
+
+### Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Create a `.env` file
+### Configure environment variables
+
+Create a `.env` file in the project root.
 
 ```env
-DATABASE_URL=sqlite:///database.db
+DATABASE_URL=<your_database_url>
 ```
 
-Run the server
+### Run the backend
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-Open
+### Open the application
+
+API Documentation
 
 ```
 http://127.0.0.1:8000/docs
@@ -250,30 +272,52 @@ http://127.0.0.1:8000/docs
 
 ---
 
-#  Deployment
+## Deployment
 
-The application is designed to be deployed using:
+The project is deployed using a modern cloud-native stack.
 
-- **Backend:** Render
-- **Database:** PostgreSQL (Neon)
-- **Frontend (Planned):** HTML, CSS, JavaScript deployed on Vercel
+| Component | Platform |
+|-----------|----------|
+| Frontend | Vercel |
+| Backend | Render |
+| Database | Neon PostgreSQL |
 
 ---
 
-#  Future Improvements
+## Future Improvements
 
-- Custom aliases for shortened URLs
-- QR Code generation
+- Custom aliases for URLs
 - URL expiration
+- User authentication
+- QR code generation
 - Rate limiting
 - Docker support
-- Automated tests using Pytest
+- Automated testing with Pytest
 - Redis caching
-- User authentication
 - Analytics dashboard
+- URL management dashboard
 
 ---
 
-#  License
+## What I Learned
+
+This project provided practical experience in:
+
+- Designing RESTful APIs with FastAPI
+- Building modular backend applications
+- Working with SQLModel as an ORM
+- Structuring projects using routers, CRUD, models, and schemas
+- Managing configuration using environment variables
+- Integrating PostgreSQL with a FastAPI application
+- Deploying backend services on Render
+- Deploying static frontend applications on Vercel
+- Connecting cloud-hosted applications to a managed PostgreSQL database
+- Building and consuming REST APIs using Vanilla JavaScript
+- Handling CORS for cross-origin communication
+- Designing responsive user interfaces without frontend frameworks
+
+---
+
+## License
 
 This project is licensed under the MIT License.
