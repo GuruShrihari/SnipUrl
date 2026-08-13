@@ -47,6 +47,29 @@
             <span id="btn-spinner" class="spinner hidden" aria-hidden="true"></span>
           </button>
         </div>
+
+        <!-- Custom code toggle & input -->
+        <div class="custom-code-section">
+          <button id="custom-code-toggle" type="button" class="custom-code-toggle">
+            <span id="toggle-icon" class="toggle-icon">+</span>
+            <span id="toggle-text">Use a custom short code</span>
+          </button>
+          <div id="custom-code-row" class="custom-code-row hidden">
+            <div class="custom-code-input-wrap">
+              <input
+                id="custom-code-input"
+                type="text"
+                class="url-input custom-code-field"
+                placeholder="my-custom-code"
+                minlength="6"
+                maxlength="30"
+                pattern="[a-zA-Z0-9_-]+"
+              />
+              <span id="custom-code-counter" class="char-counter">0 / 30</span>
+            </div>
+            <p class="custom-code-hint">6–30 characters · letters, numbers, hyphens, underscores</p>
+          </div>
+        </div>
       </form>
     </section>
 
@@ -77,6 +100,11 @@
         <p class="feature-desc">Short, memorable URLs that are easy to share anywhere.</p>
       </div>
       <div class="feature-card">
+        <div class="feature-icon">&#9997;</div>
+        <h3 class="feature-title">Custom Codes</h3>
+        <p class="feature-desc">Choose your own short code for a personalised, branded link.</p>
+      </div>
+      <div class="feature-card">
         <div class="feature-icon">&#128202;</div>
         <h3 class="feature-title">Click Tracking</h3>
         <p class="feature-desc">Monitor how many times your short links get clicked.</p>
@@ -94,7 +122,7 @@
         <div class="step-connector"></div>
         <div class="step">
           <span class="step-number">2</span>
-          <p class="step-text">Click <strong>Shorten</strong> and get your new link</p>
+          <p class="step-text">Optionally pick a <strong>custom code</strong>, then click <strong>Shorten</strong></p>
         </div>
         <div class="step-connector"></div>
         <div class="step">

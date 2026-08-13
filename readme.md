@@ -1,6 +1,6 @@
 # URL Shortener
 
-A production-ready URL Shortener built using FastAPI and SQLModel with a focus on clean architecture, modular design, and deployment-ready backend development. The application allows users to generate short URLs, redirect to the original destination, and retrieve analytics such as click counts and creation timestamps.
+A production-ready URL Shortener built using FastAPI and SQLModel with a focus on clean architecture, modular design, and deployment-ready backend development. The application allows users to generate short URLs (with optional custom short codes), redirect to the original destination, and retrieve analytics such as click counts and creation timestamps.
 
 The project follows backend engineering best practices including separation of concerns, environment-based configuration, reusable CRUD operations, IP-based rate limiting with Redis, and a layered project structure.
 
@@ -30,6 +30,9 @@ The project follows backend engineering best practices including separation of c
 ## Features
 
 - Generate unique 6-character short URLs using cryptographically secure random values
+- **Custom short codes** — choose your own 6–30 character alias (letters, numbers, hyphens, underscores)
+- Reserved code protection — prevents overwriting system routes (`shorten`, `stats`, `docs`, etc.)
+- Duplicate URL detection — re-submitting the same URL returns the existing short link
 - Redirect users to the original URL
 - Track click counts automatically
 - Retrieve URL statistics on a dedicated analytics page
@@ -37,6 +40,7 @@ The project follows backend engineering best practices including separation of c
 - IP-based rate limiting powered by Redis (configurable limit and window)
 - Rate-limit cooldown countdown displayed in the UI
 - Toast notification system for real-time user feedback
+- Granular error handling — distinct UI for rate limits, code conflicts, reserved codes, and validation errors
 - PostgreSQL database integration (with SQLite fallback for local development)
 - Environment-based configuration via Pydantic Settings
 - Modular project architecture
@@ -119,6 +123,7 @@ UrlShortener/
            │                   │
       index.html          stats.html
     (URL shortening)    (Click analytics)
+   (Custom short codes)
                      │
                      ▼
               FastAPI REST API
@@ -144,25 +149,49 @@ UrlShortener/
 POST /shorten
 ```
 
-Creates a shortened URL from a valid input URL. This endpoint is rate limited — clients exceeding the configured threshold will receive a `429 Too Many Requests` response with a `Retry-After` header.
+Creates a shortened URL from a valid input URL. Optionally accepts a `custom_code` for a personalised short link. This endpoint is rate limited — clients exceeding the configured threshold will receive a `429 Too Many Requests` response with a `Retry-After` header.
 
 **Request Body:**
 
 ```json
 {
-  "url": "https://example.com/very-long-url"
+  "url": "https://example.com/very-long-url",
+  "custom_code": "my-brand"
 }
 ```
+
+> `custom_code` is optional. When omitted, a random 6-character code is generated.
+
+**Validation Rules for `custom_code`:**
+
+| Rule         | Value                            |
+|--------------|----------------------------------|
+| Min length   | 6 characters                     |
+| Max length   | 30 characters                    |
+| Allowed chars| `a-z`, `A-Z`, `0-9`, `_`, `-`   |
 
 **Response (201):**
 
 ```json
 {
   "data": {
-    "short_url": "https://snipurl-p2zj.onrender.com/aB3kX9"
+    "short_url": "https://snipurl-p2zj.onrender.com/my-brand"
   }
 }
 ```
+
+**Error Responses:**
+
+| Status | Condition                                      | Body                                                     |
+|--------|-------------------------------------------------|----------------------------------------------------------|
+| `400`  | Custom code is a reserved system route          | `{ "detail": "This custom code is reserved on the server side" }` |
+| `409`  | Custom code is already in use                   | `{ "detail": "Custom code already exists" }`             |
+| `422`  | Invalid URL or custom code fails validation     | Pydantic validation error details                        |
+| `429`  | Rate limit exceeded                             | `{ "detail": "Too many requests. Try again later." }` + `Retry-After` header |
+
+**Duplicate URL Handling:**
+
+If the submitted URL already exists in the database, the API returns the existing short URL instead of creating a duplicate entry. This is a `201` response with the same shape.
 
 ---
 
@@ -261,6 +290,24 @@ Example:
 
 ---
 
+### Custom Short Codes
+
+Users can optionally provide their own short code when creating a URL. The system validates the code against:
+
+1. **Format rules** — must be 6–30 characters, alphanumeric with hyphens and underscores (enforced by Pydantic schema).
+2. **Reserved codes** — a server-side set of protected routes (`shorten`, `stats`, `docs`, `redoc`, `openapi.json`) that cannot be used as short codes.
+3. **Uniqueness** — the code is checked against existing entries to prevent conflicts.
+
+The custom code is lowercased before storage to ensure case-insensitive uniqueness.
+
+---
+
+### Duplicate URL Detection
+
+When a URL that already exists in the database is submitted, the system returns the existing short URL rather than creating a duplicate entry. This keeps the database clean and ensures consistent short codes for the same destination.
+
+---
+
 ### Collision-Resistant Short Codes
 
 Short codes are generated using cryptographically secure random values (`secrets` module) and validated against the database before insertion to ensure uniqueness.
@@ -293,13 +340,29 @@ On first startup, the application automatically seeds the database with sample U
 
 ### Toast Notification System
 
-The frontend includes a fully custom toast notification system with:
+The frontend includes a fully custom toast notification system (no React dependencies — pure vanilla JS) with:
 
 - Four toast types: success, error, warning, and info
 - Auto-dismiss with configurable duration
 - Animated progress bar
 - Manual close button
 - Accessible `aria-live` regions
+- Context-aware messages for different error types (rate limit, code conflict, reserved code, validation)
+
+---
+
+### Granular Frontend Error Handling
+
+The frontend differentiates between backend error types and provides specific, actionable feedback:
+
+| HTTP Status | Frontend Behavior                                                |
+|-------------|------------------------------------------------------------------|
+| `400`       | Warning toast — "Reserved code" — highlights the custom code input |
+| `409`       | Warning toast — "Code already taken" — selects the input for quick edit |
+| `422`       | Warning toast — displays Pydantic validation details              |
+| `429`       | Error toast + cooldown countdown on the Shorten button            |
+| `404`       | Error toast — "Not found" (on stats page)                        |
+| Network     | Error toast — "Connection failed" + inline error message          |
 
 ---
 
@@ -383,7 +446,6 @@ The project is deployed using a modern cloud-native stack.
 
 ## Future Improvements
 
-- Custom aliases for URLs
 - URL expiration
 - User authentication
 - QR code generation
@@ -406,6 +468,7 @@ This project provided practical experience in:
 - Managing configuration using Pydantic Settings and environment variables
 - Integrating PostgreSQL with a FastAPI application
 - Implementing IP-based rate limiting with Redis
+- Implementing custom short code validation with reserved code protection
 - Deploying backend services on Render
 - Deploying static frontend applications on Vercel
 - Connecting cloud-hosted applications to a managed PostgreSQL database
@@ -413,6 +476,7 @@ This project provided practical experience in:
 - Handling CORS for cross-origin communication
 - Designing responsive user interfaces without frontend frameworks
 - Building custom toast notification systems
+- Handling granular API error states in the frontend (409, 400, 422, 429)
 - Handling rate-limit UX with cooldown countdowns
 
 ---

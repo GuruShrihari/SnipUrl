@@ -74,6 +74,14 @@ const copyBtn = document.getElementById("copy-btn");
 const errorSection = document.getElementById("error-section");
 const errorMessage = document.getElementById("error-message");
 
+/* Custom code elements */
+const customCodeToggle = document.getElementById("custom-code-toggle");
+const customCodeRow = document.getElementById("custom-code-row");
+const customCodeInput = document.getElementById("custom-code-input");
+const customCodeCounter = document.getElementById("custom-code-counter");
+const toggleIcon = document.getElementById("toggle-icon");
+const toggleText = document.getElementById("toggle-text");
+
 /* -------------------------------------------------------
    Stats page elements (may be null on index.html)
    ------------------------------------------------------- */
@@ -138,6 +146,65 @@ function isValidUrl(value) {
 }
 
 /* -------------------------------------------------------
+   Custom code — toggle, validation, character counter
+   ------------------------------------------------------- */
+
+const CUSTOM_CODE_REGEX = /^[a-zA-Z0-9_-]+$/;
+const CUSTOM_CODE_MIN = 6;
+const CUSTOM_CODE_MAX = 30;
+let customCodeOpen = false;
+
+function toggleCustomCode() {
+  customCodeOpen = !customCodeOpen;
+
+  if (customCodeOpen) {
+    showElement(customCodeRow);
+    toggleIcon.classList.add("open");
+    toggleText.textContent = "Remove custom code";
+    customCodeInput.focus();
+  } else {
+    hideElement(customCodeRow);
+    toggleIcon.classList.remove("open");
+    toggleText.textContent = "Use a custom short code";
+    customCodeInput.value = "";
+    customCodeInput.classList.remove("invalid");
+    updateCharCounter();
+  }
+}
+
+function updateCharCounter() {
+  if (!customCodeInput || !customCodeCounter) return;
+  const len = customCodeInput.value.length;
+  customCodeCounter.textContent = `${len} / ${CUSTOM_CODE_MAX}`;
+
+  customCodeCounter.classList.remove("warn", "over");
+  if (len > CUSTOM_CODE_MAX) {
+    customCodeCounter.classList.add("over");
+  } else if (len >= CUSTOM_CODE_MAX - 5) {
+    customCodeCounter.classList.add("warn");
+  }
+}
+
+/**
+ * Validate the custom code value.
+ * Returns null if valid (or empty), or an error message string.
+ */
+function validateCustomCode(value) {
+  if (!value) return null; // empty is fine — means "no custom code"
+
+  if (value.length < CUSTOM_CODE_MIN) {
+    return `Custom code must be at least ${CUSTOM_CODE_MIN} characters.`;
+  }
+  if (value.length > CUSTOM_CODE_MAX) {
+    return `Custom code must be at most ${CUSTOM_CODE_MAX} characters.`;
+  }
+  if (!CUSTOM_CODE_REGEX.test(value)) {
+    return "Custom code can only contain letters, numbers, hyphens, and underscores.";
+  }
+  return null;
+}
+
+/* -------------------------------------------------------
    Rate-limit cooldown
    ------------------------------------------------------- */
 
@@ -185,7 +252,7 @@ function startCooldown(seconds) {
 }
 
 /* -------------------------------------------------------
-   API — Shorten (with rate-limit awareness)
+   Custom error classes
    ------------------------------------------------------- */
 
 class RateLimitError extends Error {
@@ -196,15 +263,45 @@ class RateLimitError extends Error {
   }
 }
 
-async function shortenUrl(originalUrl) {
+class ConflictError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "ConflictError";
+  }
+}
+
+class BadRequestError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "BadRequestError";
+  }
+}
+
+class ValidationError extends Error {
+  constructor(message, details) {
+    super(message);
+    this.name = "ValidationError";
+    this.details = details;
+  }
+}
+
+/* -------------------------------------------------------
+   API — Shorten (with custom code + rate-limit awareness)
+   ------------------------------------------------------- */
+
+async function shortenUrl(originalUrl, customCode = null) {
+  const payload = { url: originalUrl };
+  if (customCode) {
+    payload.custom_code = customCode;
+  }
+
   const response = await fetch(`${API_BASE_URL}/shorten`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url: originalUrl }),
+    body: JSON.stringify(payload),
   });
 
   if (response.status === 429) {
-    // Rate limited — extract retry-after or default to 60s
     const retryAfter = parseInt(response.headers.get("Retry-After"), 10) || 60;
     let detail = "Too many requests. Please slow down.";
     try {
@@ -216,6 +313,49 @@ async function shortenUrl(originalUrl) {
       // ignore parse errors
     }
     throw new RateLimitError(detail, retryAfter);
+  }
+
+  if (response.status === 409) {
+    let detail = "This custom code is already taken.";
+    try {
+      const body = await response.json();
+      if (body.detail) {
+        detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
+      }
+    } catch {
+      // ignore
+    }
+    throw new ConflictError(detail);
+  }
+
+  if (response.status === 400) {
+    let detail = "Invalid request.";
+    try {
+      const body = await response.json();
+      if (body.detail) {
+        detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
+      }
+    } catch {
+      // ignore
+    }
+    throw new BadRequestError(detail);
+  }
+
+  if (response.status === 422) {
+    let detail = "Validation error.";
+    let details = [];
+    try {
+      const body = await response.json();
+      if (body.detail && Array.isArray(body.detail)) {
+        details = body.detail;
+        detail = body.detail.map((d) => d.msg || d).join("; ");
+      } else if (body.detail) {
+        detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
+      }
+    } catch {
+      // ignore
+    }
+    throw new ValidationError(detail, details);
   }
 
   if (!response.ok) {
@@ -297,24 +437,76 @@ async function handleSubmit(event) {
     return;
   }
 
+  // Validate custom code (if the section is open and has a value)
+  let customCode = null;
+  if (customCodeOpen && customCodeInput) {
+    const codeValue = customCodeInput.value.trim();
+    if (codeValue) {
+      const codeError = validateCustomCode(codeValue);
+      if (codeError) {
+        showToast("warning", "Invalid custom code", codeError);
+        customCodeInput.classList.add("invalid");
+        customCodeInput.focus();
+        return;
+      }
+      customCodeInput.classList.remove("invalid");
+      customCode = codeValue;
+    }
+  }
+
   hideElement(resultSection);
   hideElement(errorSection);
   setLoading(true);
 
   try {
-    const shortUrl = await shortenUrl(rawValue);
+    const shortUrl = await shortenUrl(rawValue, customCode);
     showResult(shortUrl);
-    showToast("success", "URL shortened!", "Your short link is ready to copy and share.");
+
+    if (customCode) {
+      showToast("success", "Custom URL created!", `Your branded link with code "${customCode}" is ready.`);
+    } else {
+      showToast("success", "URL shortened!", "Your short link is ready to copy and share.");
+    }
+
     urlInput.value = "";
+    // Reset custom code section
+    if (customCodeOpen) {
+      toggleCustomCode();
+    }
   } catch (err) {
     if (err instanceof RateLimitError) {
       showToast(
         "error",
         "Rate limit reached",
-        `You've hit the request limit. Please wait before trying again.`,
+        "You've hit the request limit. Please wait before trying again.",
         { duration: 6000 }
       );
       startCooldown(err.retryAfter);
+    } else if (err instanceof ConflictError) {
+      showToast(
+        "warning",
+        "Code already taken",
+        "This custom code is already in use. Please choose a different one.",
+        { duration: 5000 }
+      );
+      if (customCodeInput) {
+        customCodeInput.classList.add("invalid");
+        customCodeInput.focus();
+        customCodeInput.select();
+      }
+    } else if (err instanceof BadRequestError) {
+      showToast(
+        "warning",
+        "Reserved code",
+        err.message || "This custom code is reserved and cannot be used.",
+        { duration: 5000 }
+      );
+      if (customCodeInput) {
+        customCodeInput.classList.add("invalid");
+        customCodeInput.focus();
+      }
+    } else if (err instanceof ValidationError) {
+      showToast("warning", "Validation error", err.message, { duration: 5000 });
     } else if (err instanceof TypeError && err.message === "Failed to fetch") {
       showToast("error", "Connection failed", "Unable to reach the server. Please check your connection.");
       showError("Unable to reach the server. Please check your connection and try again.");
@@ -434,3 +626,15 @@ async function handleStatsSubmit(event) {
 if (form) form.addEventListener("submit", handleSubmit);
 if (copyBtn) copyBtn.addEventListener("click", handleCopy);
 if (statsForm) statsForm.addEventListener("submit", handleStatsSubmit);
+
+// Custom code toggle + character counter
+if (customCodeToggle) {
+  customCodeToggle.addEventListener("click", toggleCustomCode);
+}
+if (customCodeInput) {
+  customCodeInput.addEventListener("input", () => {
+    updateCharCounter();
+    // Clear invalid state on typing
+    customCodeInput.classList.remove("invalid");
+  });
+}
