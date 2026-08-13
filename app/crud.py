@@ -10,6 +10,12 @@ def get_url_by_short_code(session: Session, short_code: str):
     ).first()
 
 def create_short_url(session: Session, original_url: str):
+    existing_url = session.exec(
+        select(Url).where(Url.original_url == original_url)
+    )
+    if existing_url:
+        return existing_url
+    
     while True:
         code = generate_short_code()
         
