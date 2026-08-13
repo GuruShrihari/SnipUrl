@@ -1,11 +1,17 @@
 from datetime import datetime
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class UrlCreate(BaseModel):
     url : HttpUrl
+    custom_code:str | None = Field(
+        default= None,
+        min_length=6,
+        max_length=30,
+        pattern=r"^[a-zA-Z0-9_-]+$"
+    )
 
 
 T= TypeVar("T")

@@ -14,13 +14,13 @@ router = APIRouter()
 async def shorten_url(request: Request,url:UrlCreate,session:SessionDep):
 
     check_rate_limit(request)
-    new_url = create_short_url(session, str(url.url))
+    new_url = create_short_url(session, str(url.url),url.custom_code)
 
-    shortend_url = UrlResponse(
-    short_url=str(request.base_url) + new_url.short_code
+    shortened_url = UrlResponse(
+        short_url=str(request.base_url) + new_url.short_code
     )
 
-    return {"data": shortend_url}
+    return {"data": shortened_url}
 
 
 @router.get("/{short_code}")
